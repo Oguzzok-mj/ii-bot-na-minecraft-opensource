@@ -1,0 +1,13 @@
+const assert=require('node:assert/strict')
+const read=require('../dropped-item')
+const registry=require('../node_modules/prismarine-registry')('1.20.1')
+const Entity=require('../node_modules/prismarine-entity')(registry)
+const Item=require('../node_modules/prismarine-item')(registry)
+const entity=new Entity(7)
+entity.name='item'
+assert.equal(read(entity),null)
+entity.metadata[registry.supportFeature('metadataIxOfItem')]=Item.toNotch(new Item(registry.itemsByName.birch_log.id,1))
+assert.equal(read(entity).name,'birch_log')
+assert.equal(read(null),null)
+assert.equal(read({name:'zombie',getDroppedItem(){throw Error('unexpected')}}),null)
+console.log('PASS: 1.20.1 item spawn before metadata safely deferred; later wood item detected')
