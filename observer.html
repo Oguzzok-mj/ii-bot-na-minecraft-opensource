@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minecraft · Вид от лица бота</title>
+<style>
+html,body{height:100%;margin:0;overflow:hidden;background:#10181d;color:#fff;font:15px "Segoe UI",sans-serif}canvas{position:absolute;inset:0;width:100%;height:100%}.panel{background:#172126e8;border:1px solid #75818b80;border-radius:12px;box-shadow:0 8px 30px #0006;backdrop-filter:blur(8px)}#top{position:absolute;top:18px;left:18px;padding:16px 20px;max-width:calc(100% - 240px)}#top b{display:block;font-size:18px;margin-bottom:8px}#vitals,#position{color:#bce8d1;font-size:13px;margin-top:5px}#inventoryButton{position:absolute;right:18px;top:18px;border:1px solid #75818b;background:#172126;color:white;padding:13px 18px;border-radius:10px;cursor:pointer}#crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font:28px monospace;text-shadow:1px 1px 3px black;pointer-events:none}#hotbar{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);display:grid;grid-template-columns:repeat(9,66px);gap:5px;padding:8px}#inventory{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:22px;width:660px;max-width:90vw;display:none}#inventory h2{margin:0 0 14px;font-size:20px}#slots{display:grid;grid-template-columns:repeat(9,1fr);gap:5px}.slot{min-height:55px;position:relative;display:flex;align-items:center;justify-content:center;text-align:center;background:#ffffff12;border:1px solid #84919e60;border-radius:5px;padding:3px;font-size:11px;word-break:break-word}.slot.active{border:2px solid #8fefb1;background:#8fefb125}.slot span{max-width:90%;padding-bottom:8px}.slot strong{position:absolute;bottom:1px;right:4px;font-size:13px;text-shadow:1px 1px #000}#craftArea{display:flex;gap:30px;align-items:center;justify-content:center;margin:15px 0 20px}#craftSlots{display:grid;grid-template-columns:repeat(3,65px);gap:5px}#recipe{color:#e3deb3;font-size:13px;margin-bottom:8px}#connection{position:absolute;bottom:112px;left:50%;transform:translateX(-50%);background:#172126e8;padding:8px 14px;border-radius:8px;display:none}@media(max-width:730px){#hotbar{grid-template-columns:repeat(9,1fr);width:90vw}.slot{font-size:9px}#inventory{padding:12px}#top{font-size:12px}}
+</style>
+<style>body>div,body>button{z-index:2}canvas{z-index:0}</style>
+<style>#radar{position:absolute;right:18px;top:80px;padding:12px;width:190px;font-size:12px}#radar button{background:#253a42;color:#eaffff;border:1px solid #738a92;border-radius:6px;padding:8px;cursor:pointer;margin-bottom:6px}#radar input{width:175px;background:#18252d;color:white;border:1px solid #647480;padding:5px;border-radius:4px;margin:5px 0}#oreCounts{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:8px 0}#radarTarget{color:#d2e1e8;font-size:11px;line-height:1.5}#deposit{width:100%}</style>
+</head>
+<body>
+<div id="top" class="panel"><b>Minecraft · NeuroWood</b><div id="stage">Подключение…</div><div id="vitals"></div><div id="position"></div><div id="fps" style="color:#92ecbc;font-size:12px;margin-top:5px">FPS: измерение · цель 50</div></div>
+<button id="inventoryButton">Инвентарь · E</button><div id="crosshair">+</div>
+<div id="radar" class="panel"><button id="xray">X-ray ВЫКЛ</button> <button id="espToggle">ESP ВКЛ</button><div id="oreCounts"></div><div id="radarTarget"></div><input id="playerName" placeholder="Ник игрока (необязательно)" aria-label="Ник получателя"><button id="deposit">Сложить ресурсы в сундук</button></div>
+<div id="hotbar" class="panel"></div>
+<script>
+const extra=document.createElement('div')
+extra.innerHTML='<button id="pause">Пауза</button><select id="oreFilter" aria-label="Руды в ESP" style="width:100%;background:#18252d;color:white;padding:6px;border-radius:4px"><option value="all">ESP: все руды</option><option value="diamond">ESP: алмазы</option><option value="iron">ESP: железо</option><option value="coal">ESP: уголь</option><option value="gold">ESP: золото</option><option value="redstone">ESP: редстоун</option><option value="lapis">ESP: лазурит</option><option value="copper">ESP: медь</option><option value="emerald">ESP: изумруды</option><option value="quartz">ESP: кварц</option><option value="ancient_debris">ESP: древние обломки</option></select>'
+document.getElementById('radar').prepend(extra)
+</script>
+<div id="inventory" class="panel" style="max-height:85vh;overflow:auto"><h2 id="inventoryTitle">Инвентарь</h2><div id="armor" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px"></div><div id="recipe"></div><div id="storageSlots" style="display:none;grid-template-columns:repeat(9,1fr);gap:5px;margin-bottom:18px"></div><div id="craftArea"><div id="craftSlots"></div><span>→</span><div id="result" class="slot" style="width:65px"></div></div><div id="slots"></div></div>
+<div id="connection"></div>
+<script src="items.js"></script><script src="framerate.js"></script><script src="index.js"></script>
+<script>
+const el = id => document.getElementById(id)
+for(const id of ['progress','toolHealth']){const field=document.createElement('div');field.id=id;field.style.cssText='color:#a9d8ec;font-size:12px;margin-top:5px';el('top').append(field)}
+const names = {stick:'Палки',crafting_table:'Верстак',cobblestone:'Булыжник',cobbled_deepslate:'Глубинный сланец',wooden_pickaxe:'Дерев. кирка',wooden_axe:'Дерев. топор',wooden_shovel:'Дерев. лопата',wooden_sword:'Дерев. меч',stone_pickaxe:'Кам. кирка',stone_axe:'Кам. топор',stone_shovel:'Кам. лопата',stone_sword:'Кам. меч',dirt:'Земля',oak_log:'Дуб',birch_log:'Берёза',spruce_log:'Ель',oak_planks:'Доски дуба',birch_planks:'Доски берёзы',spruce_planks:'Доски ели'}
+Object.assign(names,{raw_iron:'Сырое железо',iron_ingot:'Слиток железа',iron_helmet:'Железный шлем',iron_chestplate:'Железный нагрудник',iron_leggings:'Железные поножи',iron_boots:'Железные ботинки',furnace:'Печь',coal:'Уголь',charcoal:'Древесный уголь'})
+Object.assign(names,{diamond:'Алмаз',diamond_helmet:'Алмазный шлем',diamond_chestplate:'Алмазный нагрудник',diamond_leggings:'Алмазные поножи',diamond_boots:'Алмазные ботинки',diamond_pickaxe:'Алм. кирка',diamond_axe:'Алм. топор',diamond_shovel:'Алм. лопата',diamond_sword:'Алм. меч',iron_pickaxe:'Жел. кирка',chest:'Сундук'})
+let manual = false, autoOpen = false, hideAuto = false, lastCraft = null
+let cachedOres=[],lastOreRevision=-1
+const slotKeys=new WeakMap()
+function toggle(){if(autoOpen){hideAuto=!hideAuto;manual=false}else manual=!manual}
+el('inventoryButton').onclick=toggle
+document.addEventListener('keydown',event=>{if(event.target.matches('input,textarea,select'))return;if(event.code==='KeyE'){event.preventDefault();toggle()}if(event.code==='Escape'){manual=false;hideAuto=true}})
+function slot(item,active=false){const div=document.createElement('div');div.className='slot'+(active?' active':'');if(item){const span=document.createElement('span');span.textContent=names[item.name]||item.label||item.name.replaceAll('_',' ');const count=document.createElement('strong');count.textContent=item.count;div.append(span,count)}return div}
+function fill(target,items,selected=-1){const key=JSON.stringify([items,selected]);if(slotKeys.get(target)===key)return;slotKeys.set(target,key);target.replaceChildren(...items.map((item,index)=>slot(item,index===selected)))}
+async function refresh(){
+  try{
+    const response=await fetch(`/api/state?oreRevision=${lastOreRevision}`,{cache:'no-store'});if(!response.ok)throw Error();const state=await response.json()
+    if(state.ores)cachedOres=state.ores
+    state.ores=cachedOres;lastOreRevision=state.oreRevision
+    if(window.updateEsp)updateEsp(state)
+    el('stage').textContent=(state.paused?'Пауза · ':'')+state.stage;el('vitals').textContent=`Здоровье: ${state.health} / 20 · Сытость: ${state.food} / 20`
+    const inventoryCounts={}
+    for(const item of state.inventory||[])if(item)inventoryCounts[item.name]=(inventoryCounts[item.name]||0)+item.count
+    const armorParts=[['head','diamond_helmet',5],['torso','diamond_chestplate',8],['legs','diamond_leggings',7],['feet','diamond_boots',4]]
+    const toolParts=[['diamond_pickaxe',3],['diamond_axe',3],['diamond_shovel',1],['diamond_sword',2]]
+    const armorDone=armorParts.filter(([slot,name])=>state.armor?.[slot]===name).length
+    const toolsDone=toolParts.filter(([name])=>inventoryCounts[name]).length
+    const need=armorParts.reduce((sum,[slot,name,cost])=>sum+(state.armor?.[slot]===name||inventoryCounts[name]?0:cost),0)+toolParts.reduce((sum,[name,cost])=>sum+(inventoryCounts[name]?0:cost),0)
+    el('progress').textContent=`Алмазная броня ${armorDone}/4 · инструменты ${toolsDone}/4 · алмазы ${inventoryCounts.diamond||0}/${need}`
+    const held=state.hotbar?.[state.selected]
+    el('toolHealth').textContent=held?.remaining!=null?`${names[held.name]||held.label||held.name} · прочность ${held.remaining}`:''
+    if(state.position)el('position').textContent=`X ${state.position.x.toFixed(1)} · Y ${state.position.y.toFixed(1)} · Z ${state.position.z.toFixed(1)}`
+    fill(el('hotbar'),state.hotbar,state.selected);fill(el('slots'),state.inventory)
+    fill(el('armor'),state.armorSlots||[null,null,null,null])
+    el('inventoryTitle').textContent=state.container?'Сундук · инвентарь':'Инвентарь'
+    el('storageSlots').style.display=state.container?'grid':'none'
+    if(state.container)fill(el('storageSlots'),state.container.slots)
+    fill(el('craftSlots'),state.furnace?[state.furnace.input,state.furnace.fuel]:state.craftSlots);el('craftSlots').style.gridTemplateColumns=`repeat(${state.furnace?1:state.craftWidth},65px)`
+    el('result').replaceChildren(...slot(state.furnace?state.furnace.output:state.result).childNodes)
+    el('recipe').textContent=state.furnace?`Печь · плавка ${Math.round(state.furnace.progress*100)}%`:state.crafting ? `Крафт: ${names[state.crafting]||state.crafting.replaceAll('_',' ')}` : ''
+    autoOpen=state.inventoryOpen;if(state.crafting!==lastCraft){hideAuto=false;lastCraft=state.crafting}if(!autoOpen)hideAuto=false
+    el('inventory').style.display=manual||autoOpen&&!hideAuto?'block':'none';el('craftArea').style.display=state.inventoryOpen&&!state.container?'flex':'none'
+    el('connection').style.display='none'
+  }catch(error){el('connection').style.display='block';el('connection').textContent='Бот отключён. Запусти его в окне программы.'}
+  setTimeout(refresh,document.hidden?2000:200)
+}
+refresh()
+</script>
+<script src="esp.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NeuroWood · scene</title>
+<style>
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#11151b;color:#d3d9df;font:12px Consolas,monospace}
+canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+#connection{position:absolute;left:20px;bottom:16px;z-index:2;color:#b2bcc4;pointer-events:none}
+#crosshair{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;color:#ffffff90;font:18px monospace;pointer-events:none}
+#fps{position:absolute;right:12px;top:10px;z-index:2;color:#cdd9d7b0;font:11px Consolas,monospace;pointer-events:none;text-shadow:0 1px 2px #10151a}
+#inventory{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;width:min(590px,90vw);max-height:88%;overflow:auto;padding:16px;background:#10171eee;border:1px solid #879a9c45;border-radius:8px;box-shadow:0 16px 44px #0007;backdrop-filter:blur(10px)}
+#inventory[hidden]{display:none}#inventoryHead{display:flex;align-items:center;gap:12px;margin-bottom:12px;color:#b0c8bc}#inventoryMeta{flex:1;text-align:right;color:#89969e;font-size:11px}#inventoryClose{background:none;color:#a6b1b9;border:0;font:inherit;cursor:pointer}
+#slots{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}#armor{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;width:44%;margin-bottom:12px}
+.slot{height:49px;min-width:0;background:#ffffff06;border:1px solid #7c929531;border-radius:3px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center}.slot img{width:25px;height:25px;image-rendering:pixelated}.slot .name{width:90%;font-size:8px;color:#b6c1c8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}.slot b{position:absolute;right:3px;bottom:2px;font-size:11px;font-weight:normal;color:#d8e3dd;text-shadow:0 1px 2px #000}.slot.selected{border-color:#a2cbb399}#slots .slot:nth-child(n+28){margin-top:6px}
+</style>
+</head>
+<body>
+<div id="crosshair">+</div><div id="connection">Подключение к сцене…</div>
+<div id="fps"></div>
+<section id="inventory" hidden aria-label="Инвентарь бота"><div id="inventoryHead"><span>инвентарь</span><span id="inventoryMeta"></span><button id="inventoryClose" aria-label="Закрыть инвентарь">×</button></div><div id="armor"></div><div id="slots"></div></section>
+<script>const el=id=>document.getElementById(id)</script>
+<script src="/items.js"></script><script src="/framerate.js"></script><script src="/index.js"></script><script src="/esp.js"></script>
+<script src="/inventory-view.js"></script>
+<script>
+let cachedOres=[],lastOreRevision='none'
+async function refresh(){
+  try{
+    const response=await fetch(`/api/state?oreRevision=${encodeURIComponent(lastOreRevision)}`,{cache:'no-store'})
+    if(!response.ok)throw Error()
+    const state=await response.json()
+    if(state.ores)cachedOres=state.ores
+    state.ores=cachedOres;lastOreRevision=state.oreRevision
+    updateEsp(state)
+    updateMineInventory(state)
+    el('connection').textContent=state.stage?.startsWith('Тест')?'Тест сцены · Minecraft закрыт':''
+  }catch(error){el('connection').textContent='Соединение со сценой потеряно'}
+  setTimeout(refresh,document.hidden?1000:200)
+}
+refresh()
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "ii-bot-na-minecraft-opensource",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Minecraft Java AI resource farmer with a native terminal UI",
+  "dependencies": {
+    "mineflayer": "4.39.0",
+    "mineflayer-pathfinder": "2.4.5",
+    "prismarine-viewer": "1.33.0"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "python tests/run_checks.py"
+  }
+}
